@@ -1,0 +1,4 @@
+.vscode/*.db*
+build/
+# sdkconfig
+sdkconfig.old

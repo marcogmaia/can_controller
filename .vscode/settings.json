@@ -1,0 +1,18 @@
+{
+    "C_Cpp.intelliSenseEngineFallback": "Enabled",
+    "C_Cpp.errorSquiggles": "Enabled",
+    "files.associations": {
+        "aes.h": "c",
+        "esp_system.h": "c",
+        "freertos.h": "c",
+        "gpio.h": "c",
+        "esp_timer.h": "c",
+        "typeinfo": "c",
+        "bittming.h": "c",
+        "esp_log.h": "c",
+        "math.h": "c",
+        "stdlib.h": "c",
+        "stdio.h": "c",
+        "encoder.h": "c"
+    },
+}

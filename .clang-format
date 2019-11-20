@@ -1,0 +1,44 @@
+Language: Cpp
+Standard: Cpp11
+BasedOnStyle: Google
+BreakBeforeBraces: Custom
+BraceWrapping:
+    AfterEnum: false
+    AfterStruct: false
+    AfterControlStatement: false
+    AfterExternBlock: false
+    BeforeElse: true
+    SplitEmptyFunction: false
+BreakBeforeBinaryOperators: All
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeComma
+Cpp11BracedListStyle: true
+PointerAlignment: Left
+PointerBindsToType: true
+TabWidth: 4
+IndentWidth: 4
+SortIncludes: false
+AccessModifierOffset: -4
+ColumnLimit: 120
+NamespaceIndentation: All
+AlignAfterOpenBracket: Align
+AlignTrailingComments: true
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: false
+AllowAllParametersOfDeclarationOnNextLine: true
+AlwaysBreakTemplateDeclarations: true
+UseTab: Never
+
+AllowShortFunctionsOnASingleLine: Empty
+
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: Never
+SpaceInEmptyParentheses: false
+SpacesBeforeTrailingComments: 2
+
+IncludeBlocks: Regroup
+
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 2
+
+ReflowComments: true

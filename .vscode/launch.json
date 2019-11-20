@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "ESP32 OpenOCD launch",
+            "type": "gdb",
+            "request": "launch",
+            "target": "${workspaceFolder}/build/${workspaceFolderBasename}.elf",
+            "cwd": "${workspaceFolder}",
+            "gdbpath": "${env:HOME}/esp/xtensa-esp32-elf/bin/xtensa-esp32-elf-gdb",
+            "autorun": [
+                "target remote :3333",
+                "mon reset halt",
+                "flushregs",
+                "thb app_main",
+                "c"
+            ],
+            "preLaunchTask": "openocd"
+        }
+    ]
+}

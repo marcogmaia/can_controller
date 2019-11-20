@@ -1,0 +1,39 @@
+{
+    "configurations": [
+        {
+            "name": "ESP32-linux",
+            "includePath": [
+                "${workspaceFolder}/build/config",
+                "${env:IDF_PATH}/components/**",
+                "${env:IDF_PATH}/components/log/include",
+                "${env:IDF_PATH}/components/freertos/include",
+                "${env:IDF_PATH}/components/bt/host/**",
+                "${env:IDF_PATH}/components/esp_wifi/include",
+                "${workspaceFolder}/main/include",
+                "${workspaceFolder}/main",
+                "${workspaceFolder}/main/**",
+                "${env:HOME}/esp/xtensa-esp32-elf/xtensa-esp32-elf/include/c++/8.2.0",
+                "${workspaceFolder}/components/bittiming",
+                "${workspaceFolder}/components/can_controller/include"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/**",
+                    "${env:HOME}/esp/xtensa-esp32-elf/**",
+                    "${env:IDF_PATH}/components/**",
+                    "${env:IDF_PATH}/components/freertos/**",
+                    "${env:IDF_PATH}/components/log/**"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": "${workspaceFolder}/.vscode/browse.vc.db"
+            },
+            "intelliSenseMode": "gcc-x64",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "compilerPath": "${env:HOME}/esp/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc",
+            "defines": [],
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+        }
+    ],
+    "version": 4
+}
