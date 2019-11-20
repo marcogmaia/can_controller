@@ -3,50 +3,8 @@
 #include <assert.h>
 #include <stdbool.h>
 #include "decoder.h"
-
-
-/* remover o sexto bit consecutivo igual */
-static void decoder_bit_destuff(const uint8_t sample_bit, CAN_message_typedef *destuffed_bitarr) {
-    // static uint8_t current_bit = 0xFF;
-    static uint8_t size           = 0;
-    static uint8_t buffer[256]    = {0};
-    static uint8_t last_bit       = 0xFF;
-    static uint8_t curr_bit_count = 0;
-    static bool is_stuffed_bit    = 0;
-
-    curr_bit_count = (last_bit == sample_bit) ? (curr_bit_count + 1) : 1;
-    is_stuffed_bit = (curr_bit_count == 6) ? true : false;
-
-    if(is_stuffed_bit) {
-        /* se é o bitstuffed e não mudou o bit, então ocorreu o erro */
-        if(last_bit == sample_bit) {
-            /* ERROR BitStuff */
-            fprintf(stderr, "ERROR: BitStuff");
-        }
-        return;
-    }
-    else {
-        buffer[size++] = sample_bit;
-    }
-
-    last_bit = sample_bit;
-
-    /* find EoF */
-    { static uint8_t eof_cnt = 0; }
-}
-
-
-static uint32_t decoded_message_index = 0;
-/* alway zero the decoded_message_index (decoded_message_index = 0)
- * before calling binary_to_numbedecoded_message_indexr
- */
-void static binary_to_number(void *num, uint8_t *bitarr, uint32_t size) {
-    *(uint32_t *)num = 0;
-    for(uint32_t i = 0; i < size; ++i) {
-        *(uint32_t *)num |= bitarr[i + decoded_message_index] << (size - 1 - i);
-    }
-    decoded_message_index += size;
-}
+#include "bittiming.h"
+#include "can_controller.h"
 
 
 /**
@@ -60,7 +18,7 @@ void static binary_to_number(void *num, uint8_t *bitarr, uint32_t size) {
  * 4- Acknowledgement Check.
  * 5- Cyclic Redundancy Check.
  */
-can_err decoder_decode_msg(CAN_configs_typedef *p_config_dst, uint8_t sampled_bit) {
+CAN_err_t decoder_decode_msg(CAN_configs_t *p_config_dst, uint8_t sampled_bit) {
     enum decoder_fsm {
         SOF = 0,
         ID_A,
@@ -112,7 +70,10 @@ can_err decoder_decode_msg(CAN_configs_typedef *p_config_dst, uint8_t sampled_bi
         }
     }
 
+
+    /* start State Machine */
     static uint8_t state_cnt = 0;
+    CAN_err_t ret            = CAN_OK;
     switch(state) {
         case SOF: {
             /* se SoF faz o setup */
@@ -235,9 +196,14 @@ can_err decoder_decode_msg(CAN_configs_typedef *p_config_dst, uint8_t sampled_bi
         case ACK: {
             buffer[size++] = sampled_bit;
             state          = ACK_DL;
+            ret            = CAN_ACK;
         } break;
 
         case ACK_DL: {
+            if(p_config_dst->CRC != crc15(buffer, size - 15 - 2)) {
+                fprintf(stderr, "ERROR CRC");
+                ret = CAN_ERROR_CRC;
+            }
             buffer[size++] = sampled_bit;
             state          = CAN_EOF;
         } break;
@@ -250,6 +216,7 @@ can_err decoder_decode_msg(CAN_configs_typedef *p_config_dst, uint8_t sampled_bi
             if(sampled_bit == 0) {
                 fprintf(stderr, "ERROR Frame EOF\n");
                 state_cnt = 0;
+                ret       = CAN_ERROR_FRAME;
             }
             else {
                 buffer[size++] = sampled_bit;
@@ -260,23 +227,70 @@ can_err decoder_decode_msg(CAN_configs_typedef *p_config_dst, uint8_t sampled_bi
                 // state_cnt = 0;
                 state_cnt = 0;
                 state     = INTERFRAME_SPACING;  // state = INTERFRAME_SPACING
+                ret       = CAN_DECODED;
             }
         } break;
 
         case INTERFRAME_SPACING: {
             if(sampled_bit == 0) {
                 fprintf(stderr, "ERROR Frame INTERFRAME_SPACING\n");
+                ret = CAN_ERROR_FRAME;
             }
             else {
                 buffer[size++] = sampled_bit;
                 ++state_cnt;
             }
             if(state_cnt == 3) {
-                state_cnt = 0;
-                state     = SOF; /* vai ficar aqui até acontecer o SoF */
+                ret           = CAN_IDLE;
+                hardsync_flag = 1;
+                state_cnt     = 0;
+                state         = SOF; /* vai ficar aqui até acontecer o SoF */
             }
         } break;
     }
-    
-    return CAN_OK;
+
+    return ret;
+}
+
+void decoder_task(void *ignore) {
+    uint8_t sample_bit;
+    static CAN_configs_t decoded_configs;
+    memset(&decoded_configs, 0, sizeof decoded_configs);
+
+    while(true) {
+        if(xSemaphoreTake(sem_sample_pt, portMAX_DELAY)) {
+            sample_bit    = gpio_get_level(p_can_pins->rx_pin);
+            CAN_err_t ret = decoder_decode_msg(&decoded_configs, sample_bit);
+
+            /* tratar os erros no switch */
+            switch(ret) {
+                case CAN_DECODED: {
+                    printf(
+                        "DECODE:\n"
+                        "ID_A: 0x%X\n"
+                        "DLC: %d\n"
+                        "RTR: %d\n"
+                        "IDE: %d\n"
+                        "ID_B: 0x%X\n"
+                        "CRC: %d",
+                        decoded_configs.StdId, decoded_configs.DLC, decoded_configs.RTR, decoded_configs.IDE,
+                        decoded_configs.ExtId, decoded_configs.CRC);
+
+                    /* reset configs  */
+                    memset(&decoded_configs, 0, sizeof decoded_configs);
+                } break;
+
+                case CAN_ACK: {
+                    /* envia pro transmitter o ACK pra botar no barramento */
+                } break;
+
+                case CAN_IDLE: {
+                    hardsync_flag = 1;
+                } break;
+
+                default:
+                    break;
+            }
+        }
+    }
 }

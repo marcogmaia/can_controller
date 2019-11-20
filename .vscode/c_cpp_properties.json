@@ -13,7 +13,6 @@
                 "${workspaceFolder}/main",
                 "${workspaceFolder}/main/**",
                 "${env:HOME}/esp/xtensa-esp32-elf/xtensa-esp32-elf/include/c++/8.2.0",
-                "${workspaceFolder}/components/bittiming",
                 "${workspaceFolder}/components/can_controller/include"
             ],
             "browse": {

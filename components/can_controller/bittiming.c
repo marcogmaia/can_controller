@@ -2,10 +2,10 @@
 
 
 #include "esp_timer.h"
-#include "bittming.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
+#include "bittiming.h"
 
 
 typedef enum {
@@ -25,14 +25,13 @@ static uint8_t ts2_cnt = 0;
 /* current state */
 // uint8_t state;
 
-SemaphoreHandle_t sem_write_pt;
-SemaphoreHandle_t sem_sample_pt;
+
 uint8_t resync_flag    = 0;
 static state_fsm state = SYNC;
 bool is_write_pt, is_sample_pt;
 
 /* ==== END VARIABLE DEFINITIONS ========= */
-static const bittming_configs_t *configs;
+static const bittiming_configs_t *configs;
 
 static void plot_data() {
     printf("%d %d %d\n", state, is_write_pt - 1, is_sample_pt - 1);
@@ -55,7 +54,7 @@ static void bittimint_sample_task(void *ignore) {
 
 static esp_timer_handle_t handle_bittiming_fsm;
 
-static void IRAM_ATTR intr_hard_sync(void *ignore) {
+static void hard_sync(void *ignore) {
     static int64_t lasttime = 0;
     // timenow = esp_timer_get_time();
     int64_t timenow = esp_timer_get_time();
@@ -77,8 +76,10 @@ static void IRAM_ATTR intr_set_resync_flag(void *ignore) {
     }
 }
 
-void bittiming_setup(const bittming_configs_t *timing_configs) {
+void bittiming_setup(const bittiming_configs_t *timing_configs, const CAN_pins_t *p_can_pins_conf) {
     configs = timing_configs;
+    p_can_pins = p_can_pins_conf;
+    
 
     /* create writePt and samplePt semaphores */
     sem_write_pt  = xSemaphoreCreateBinary();
@@ -100,7 +101,7 @@ void bittiming_setup(const bittming_configs_t *timing_configs) {
 
     /* setup cantx and canrx interrupts */
     gpio_config_t io_conf;
-    io_conf.pin_bit_mask = (1ULL << GPIO_NUM_18) | (1ULL << GPIO_NUM_19);  // GPIO18 e 19
+    io_conf.pin_bit_mask = (1ULL << p_can_pins->rx_pin) ;  // GPIO18 e 19
     io_conf.mode         = GPIO_MODE_INPUT;
     io_conf.pull_down_en = GPIO_PULLDOWN_ENABLE;
     io_conf.pull_up_en   = GPIO_PULLUP_DISABLE;
@@ -109,8 +110,10 @@ void bittiming_setup(const bittming_configs_t *timing_configs) {
     gpio_config(&io_conf);
 
     gpio_install_isr_service(ESP_INTR_FLAG_EDGE);
-    gpio_isr_handler_add(GPIO_NUM_18, intr_hard_sync, NULL);
+    // gpio_isr_handler_add(GPIO_NUM_18, intr_hard_sync, NULL);
     gpio_isr_handler_add(GPIO_NUM_19, intr_set_resync_flag, NULL);
+
+    gpio_set_direction(p_can_pins->tx_pin, GPIO_MODE_OUTPUT);
 }
 
 static bool consume_resync_flag() {
@@ -124,6 +127,7 @@ void update_state_machine(void *ignore) {
     static uint8_t extend_count = 0;
     static uint8_t printtq      = 0;
 
+
     printtq = !printtq;
     printf("%d ", printtq - 2);
     plot_data();
@@ -132,6 +136,10 @@ void update_state_machine(void *ignore) {
 
     switch(state) {
         case SYNC: {
+            if(hardsync_flag) {
+                hard_sync(NULL);
+                hardsync_flag = 0;
+            }
             state = PSEG1;
             consume_resync_flag();
         } break;

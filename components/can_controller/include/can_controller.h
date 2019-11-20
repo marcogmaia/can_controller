@@ -2,6 +2,10 @@
 
 #include <stdint.h>
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+#include "driver/gpio.h"
+
 #define CAN_CONFIGS_DEFAULT                                                                                          \
     {                                                                                                                \
         .StdId = 0x7FF, .ExtId = 0x1FFFFFFF, .SRR = 1, .IDE = 0, .RTR = 1, .r0 = 1, .r1 = 1, .DLC = 0, .data = NULL, \
@@ -11,7 +15,7 @@
 typedef struct CAN_message {
     uint8_t bitarray[256];
     uint8_t length;
-} CAN_message_typedef;
+} CAN_message_t;
 
 
 typedef struct CAN_configs {
@@ -32,13 +36,27 @@ typedef struct CAN_configs {
                         = 0 and Max_Data = 8. */
     uint8_t *data;  /* Pointer to data to be transmitted */
     uint32_t CRC;
-} CAN_configs_typedef;
+} CAN_configs_t;
 
 typedef enum enum_can_err {
     CAN_OK = 0,
+    CAN_DECODED,
+    CAN_ACK,
+    CAN_IDLE,
     CAN_ERROR_BIT,
     CAN_ERROR_STUFFING,
     CAN_ERROR_FRAME,
     CAN_ERROR_ACK,
     CAN_ERROR_CRC,
-} can_err;
+} CAN_err_t;
+
+typedef struct {
+    gpio_num_t rx_pin;
+    gpio_num_t tx_pin;
+} CAN_pins_t;
+
+extern SemaphoreHandle_t sem_write_pt;
+extern SemaphoreHandle_t sem_sample_pt;
+extern const CAN_pins_t *p_can_pins;
+
+extern uint8_t hardsync_flag;

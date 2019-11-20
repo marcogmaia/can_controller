@@ -1,6 +1,6 @@
 #pragma once
-#include "utils.h"
-#include "candefs.h"
+#include "can_utils.h"
+#include "can_controller.h"
 
 
-void encoder_encode_msg(CAN_configs_typedef *p_config, CAN_message_typedef *encoded_message);
+void encoder_encode_msg(CAN_configs_t *p_config, CAN_message_t *encoded_message);

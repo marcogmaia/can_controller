@@ -8,11 +8,13 @@
         "gpio.h": "c",
         "esp_timer.h": "c",
         "typeinfo": "c",
-        "bittming.h": "c",
+        "bittiming.h": "c",
         "esp_log.h": "c",
         "math.h": "c",
         "stdlib.h": "c",
         "stdio.h": "c",
-        "encoder.h": "c"
+        "encoder.h": "c",
+        "transmitter.h": "c",
+        "can_controller.h": "c"
     },
 }

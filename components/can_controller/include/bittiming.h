@@ -7,6 +7,7 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 
+#include "can_controller.h"
 
 typedef struct {
     // const uint8_t BRP;        //= 15;
@@ -14,14 +15,14 @@ typedef struct {
     const uint32_t time_tq;   //= 50; duração do tq em milisegundos
     const uint8_t size_seg1;  //= 15;  // propseg + phaseseg1
     const uint8_t size_seg2;  //= 5;
-} bittming_configs_t;
+} bittiming_configs_t;
 /* UNO tem interrupts apenas nos pins 2 e 3 */
 // const uint8_t rx_pin = 2;
 // const uint8_t hard_sync_pin = 3;
 // }  // namespace configs
 
 
-// enum bittming_states {
+// enum bittiming_states {
 //     SYNC = 0,
 //     PSEG1,
 //     PSEG2,
@@ -39,14 +40,13 @@ typedef struct {
 // extern uint8_t state;
 // extern bool is_write_pt;
 // extern bool is_sample_pt;
-extern SemaphoreHandle_t sem_write_pt;
-extern SemaphoreHandle_t sem_sample_pt;
+
 extern uint8_t resync_flag;
 
 /**
  * run in the setup to configure the bittiming
  */
-void bittiming_setup(const bittming_configs_t *p_timing_configs);
+void bittiming_setup(const bittiming_configs_t *p_timing_configs, const CAN_pins_t *p_can_pins_conf);
 
 /**
  * update the state machine based on the current state

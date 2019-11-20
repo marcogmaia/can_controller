@@ -1,6 +1,5 @@
 #include <string.h>
 #include <assert.h>
-#include "utils.h"
 #include "encoder.h"
 
 #include <stdio.h>
@@ -28,7 +27,6 @@ uint8_t bit_stuff(uint8_t *dst, uint8_t *begin, uint8_t *end) {
     uint8_t buffer[256];
     memset(buffer, 0xFF, sizeof buffer);
     uint8_t size    = 0;
-    bool need_stuff = false;
 
     uint8_t lastbit = 0xFF;
     uint8_t counter = 0;
@@ -60,26 +58,16 @@ static void int_to_bitarray(uint8_t *dst, uint32_t num, uint8_t size) {
     // return size;
 }
 
-static uint8_t autoincrement_ptr_int_to_bitarray(uint8_t **dst, uint32_t num, uint8_t size) {
-    int_to_bitarray(*dst, num, size);
-    *dst += size;
-    return size;
-}
-
-static void encoder_message_add_num_to_bits(CAN_message_typedef *p_encoded_message, uint32_t num, uint8_t size) {
+static void encoder_message_add_num_to_bits(CAN_message_t *p_encoded_message, uint32_t num, uint8_t size) {
     assert(((uint32_t)p_encoded_message->length + (uint32_t)size) < 0xFF);
     int_to_bitarray(p_encoded_message->bitarray + p_encoded_message->length, num, size);
     p_encoded_message->length += size;
 }
 
-void encoder_encode_msg(CAN_configs_typedef *p_config, CAN_message_typedef *p_encoded_message) {
+void encoder_encode_msg(CAN_configs_t *p_config, CAN_message_t *p_encoded_message) {
     // static uint8_t encoded_message[256];
     memset(p_encoded_message->bitarray, 0, sizeof p_encoded_message->bitarray);
     p_encoded_message->length = 0;
-
-    uint8_t *ptr_bitarr = p_encoded_message->bitarray;
-    uint8_t *length     = &p_encoded_message->length;
-
 
     encoder_message_add_num_to_bits(p_encoded_message, 0, 1);
     encoder_message_add_num_to_bits(p_encoded_message, p_config->StdId, 11);
