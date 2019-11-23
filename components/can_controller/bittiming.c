@@ -54,7 +54,7 @@ static void plot_data() {
 
 static esp_timer_handle_t handle_bittiming_fsm;
 
-static void hard_sync(void *ignore) {
+void hard_sync() {
     static int64_t lasttime = 0;
     // timenow = esp_timer_get_time();
     int64_t timenow = esp_timer_get_time();
@@ -110,6 +110,7 @@ void bittiming_setup(const bittiming_configs_t *timing_configs, const CAN_pins_t
     gpio_isr_handler_add(p_can_pins->rx_pin, intr_set_resync_flag, NULL);
 
     gpio_set_direction(p_can_pins->tx_pin, GPIO_MODE_OUTPUT);
+    gpio_set_level(p_can_pins->tx_pin, 1);
 }
 
 static bool consume_resync_flag() {
@@ -133,7 +134,7 @@ void update_state_machine(void *ignore) {
     switch(state) {
         case SYNC: {
             if(hardsync_flag) {
-                hard_sync(NULL);
+                hard_sync();
                 hardsync_flag = 0;
             }
             state = PSEG1;

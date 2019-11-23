@@ -65,7 +65,7 @@ void update_state_machine();
 // uint8_t consume_resync_flag();
 
 /* set state */
-// void hard_sync();
+void hard_sync();
 
 /* @brief plot(print): state, write_pt and sample_pt */
 // void plot_data();

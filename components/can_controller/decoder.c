@@ -21,6 +21,8 @@ const char *TAG = "DECODER";
  * 5- Cyclic Redundancy Check.
  */
 CAN_err_t decoder_decode_msg(CAN_configs_t *p_config_dst, uint8_t sampled_bit) {
+    printf("%d", sampled_bit);
+    fflush(stdout);
     enum decoder_fsm {
         SOF = 0,
         ID_A,
@@ -43,7 +45,7 @@ CAN_err_t decoder_decode_msg(CAN_configs_t *p_config_dst, uint8_t sampled_bit) {
     static enum decoder_fsm state = SOF;
 
     static uint8_t buffer[256];
-    static uint8_t size = 0;
+    static uint8_t size;
 
     /* "estado" que trata do destuff */
     {
@@ -80,6 +82,7 @@ CAN_err_t decoder_decode_msg(CAN_configs_t *p_config_dst, uint8_t sampled_bit) {
         case SOF: {
             /* se SoF faz o setup */
             if(sampled_bit == 0) {
+                // hardsync_flag = 1;
                 memset(buffer, 0xFF, sizeof buffer);
                 memset(p_config_dst, 0, sizeof *p_config_dst);
                 static uint8_t data[8];
@@ -90,11 +93,11 @@ CAN_err_t decoder_decode_msg(CAN_configs_t *p_config_dst, uint8_t sampled_bit) {
                 buffer[size++] = sampled_bit;
                 state          = ID_A;
             }
+
         } break;
 
         case ID_A: {
-            static uint8_t state_cnt = 0;
-            buffer[size++]           = sampled_bit;
+            buffer[size++] = sampled_bit;
             ++state_cnt;
             if(state_cnt == 11) {
                 state_cnt           = 0;
@@ -275,9 +278,10 @@ static void decoder_task(void *ignore) {
                         "RTR: %d\n"
                         "IDE: %d\n"
                         "ID_B: 0x%X\n"
-                        "CRC: %d",
+                        "DATA: %d\n"
+                        "CRC: %d\n",
                         decoded_configs.StdId, decoded_configs.DLC, decoded_configs.RTR, decoded_configs.IDE,
-                        decoded_configs.ExtId, decoded_configs.CRC);
+                        decoded_configs.ExtId, decoded_configs.data[0], decoded_configs.CRC);
 
                     /* reset configs  */
                     memset(&decoded_configs, 0, sizeof decoded_configs);

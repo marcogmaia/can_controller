@@ -13,8 +13,6 @@ void transmitter_transmit(uint8_t transmit_bit) {
     // static
     if(xSemaphoreTake(sem_write_pt, portMAX_DELAY)) {
         gpio_set_level(p_can_pins->tx_pin, transmit_bit);
-        printf("%d", transmit_bit);
-        fflush(stdout);
     }
 }
 
@@ -30,7 +28,7 @@ uint8_t transmitter_transmit_message(const CAN_message_t *p_message) {
     transmitter_transmit(1);
     transmitter_transmit(1);
     transmitter_transmit(1);
-    
+
     printf("\n");
     return 1;
 }
@@ -38,7 +36,8 @@ uint8_t transmitter_transmit_message(const CAN_message_t *p_message) {
 static void transmitter_task(void *ignore) {
     CAN_configs_t can_configs;
     can_configs.StdId     = 0x123;
-    can_configs.IDE       = 0;
+    can_configs.IDE       = 1;
+    can_configs.ExtId     = 0x3F123;
     static uint8_t data[] = {0};
     can_configs.data      = data;
     can_configs.DLC       = sizeof data;
@@ -46,6 +45,7 @@ static void transmitter_task(void *ignore) {
 
     static CAN_message_t can_message;
     while(true) {
+        memset(&can_message, 0, sizeof can_message);
         encoder_encode_msg(&can_configs, &can_message);
         transmitter_transmit_message(&can_message);
         data[0] += 1;
