@@ -5,11 +5,12 @@
 #include "bittiming.h"
 #include "can_controller.h"
 #include "decoder.h"
-
+#include "encoder.h"
+#include "transmitter.h"
 
 void app_main(void) {
     static const bittiming_configs_t timing_configs = {
-        .time_tq   = 50000,  // 50ms
+        .time_tq   = 10000,  // 10ms
         .size_seg1 = 14,     // sync_seg == 1, 75% sample point
         .size_seg2 = 5,
         .SJW       = 3,
@@ -21,6 +22,7 @@ void app_main(void) {
     };
 
     bittiming_setup(&timing_configs, &can_pins);
-    xTaskCreate(decoder_task, "decoderTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
-    // xTaskCreate(encoder_task, "encoderTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
+    decoder_init();
+    transmitter_init();
+    
 }

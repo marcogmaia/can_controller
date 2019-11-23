@@ -37,20 +37,20 @@ static void plot_data() {
     printf("%d %d %d\n", state, is_write_pt - 1, is_sample_pt - 1);
 }
 
-static void bittiming_write_task(void *ignore) {
-    while(true) {
-        if(xSemaphoreTake(sem_write_pt, portMAX_DELAY) == pdTRUE) {
-            printf("write task\n");
-        }
-    }
-}
-static void bittimint_sample_task(void *ignore) {
-    while(true) {
-        if(xSemaphoreTake(sem_sample_pt, portMAX_DELAY) == pdTRUE) {
-            printf("sample task\n");
-        }
-    }
-}
+// static void bittiming_write_task(void *ignore) {
+//     while(true) {
+//         if(xSemaphoreTake(sem_write_pt, portMAX_DELAY) == pdTRUE) {
+//             printf("write task\n");
+//         }
+//     }
+// }
+// static void bittimint_sample_task(void *ignore) {
+//     while(true) {
+//         if(xSemaphoreTake(sem_sample_pt, portMAX_DELAY) == pdTRUE) {
+//             printf("sample task\n");
+//         }
+//     }
+// }
 
 static esp_timer_handle_t handle_bittiming_fsm;
 
@@ -70,7 +70,7 @@ static void hard_sync(void *ignore) {
 static void IRAM_ATTR intr_set_resync_flag(void *ignore) {
     static int64_t lasttime = 0;
     int64_t timenow         = esp_timer_get_time();
-    if((timenow - lasttime) > 50000) {
+    if((timenow - lasttime) > 200000) { // 200ms
         lasttime    = timenow;
         resync_flag = 1;
     }
@@ -94,11 +94,7 @@ void bittiming_setup(const bittiming_configs_t *timing_configs, const CAN_pins_t
     /* The timer has been created but is not running yet */
     /* Start the timers */
     ESP_ERROR_CHECK(esp_timer_start_periodic(handle_bittiming_fsm, timing_configs->time_tq));
-
-    /* setup writeTask sampleTask */
-    xTaskCreate(bittiming_write_task, "writeTask", configMINIMAL_STACK_SIZE * 3, NULL, 9, NULL);
-    xTaskCreate(bittimint_sample_task, "sampleTask", configMINIMAL_STACK_SIZE * 3, NULL, 8, NULL);
-
+    
     /* setup cantx and canrx interrupts */
     gpio_config_t io_conf;
     io_conf.pin_bit_mask = (1ULL << p_can_pins->rx_pin) ;  // GPIO18 e 19
@@ -111,7 +107,7 @@ void bittiming_setup(const bittiming_configs_t *timing_configs, const CAN_pins_t
 
     gpio_install_isr_service(ESP_INTR_FLAG_EDGE);
     // gpio_isr_handler_add(GPIO_NUM_18, intr_hard_sync, NULL);
-    gpio_isr_handler_add(GPIO_NUM_19, intr_set_resync_flag, NULL);
+    gpio_isr_handler_add(p_can_pins->rx_pin, intr_set_resync_flag, NULL);
 
     gpio_set_direction(p_can_pins->tx_pin, GPIO_MODE_OUTPUT);
 }
@@ -129,8 +125,8 @@ void update_state_machine(void *ignore) {
 
 
     printtq = !printtq;
-    printf("%d ", printtq - 2);
-    plot_data();
+    // printf("%d ", printtq - 2);
+    // plot_data();
 
     is_write_pt = is_sample_pt = false;
 
@@ -178,7 +174,7 @@ void update_state_machine(void *ignore) {
 
         case PSEG2: {
             ++ts2_cnt;
-            if(ts2_cnt == configs->size_seg2) {
+            if(ts2_cnt >= configs->size_seg2) {
                 ts2_cnt     = 0;
                 is_write_pt = true;
                 xSemaphoreGive(sem_write_pt);

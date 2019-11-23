@@ -4,3 +4,4 @@
 
 
 void encoder_encode_msg(CAN_configs_t *p_config, CAN_message_t *encoded_message);
+void encoder_task(void *pv_message);

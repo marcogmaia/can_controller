@@ -5,4 +5,4 @@ cmake_minimum_required(VERSION 3.5)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(can_controller_redes_automotivas_ufpe)
+project(esp32_can_controller)

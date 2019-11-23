@@ -6,6 +6,8 @@
 #include "bittiming.h"
 #include "can_controller.h"
 
+#include "esp_log.h"
+const char *TAG = "DECODER";
 
 /**
  * https://www.kvaser.com/about-can/the-can-protocol/can-error-handling/
@@ -201,7 +203,7 @@ CAN_err_t decoder_decode_msg(CAN_configs_t *p_config_dst, uint8_t sampled_bit) {
 
         case ACK_DL: {
             if(p_config_dst->CRC != crc15(buffer, size - 15 - 2)) {
-                fprintf(stderr, "ERROR CRC");
+                ESP_LOGW(TAG, "ERROR CRC");
                 ret = CAN_ERROR_CRC;
             }
             buffer[size++] = sampled_bit;
@@ -214,7 +216,7 @@ CAN_err_t decoder_decode_msg(CAN_configs_t *p_config_dst, uint8_t sampled_bit) {
          */
         case CAN_EOF: {
             if(sampled_bit == 0) {
-                fprintf(stderr, "ERROR Frame EOF\n");
+                ESP_LOGW(TAG, "ERROR Frame EOF\n");
                 state_cnt = 0;
                 ret       = CAN_ERROR_FRAME;
             }
@@ -233,7 +235,7 @@ CAN_err_t decoder_decode_msg(CAN_configs_t *p_config_dst, uint8_t sampled_bit) {
 
         case INTERFRAME_SPACING: {
             if(sampled_bit == 0) {
-                fprintf(stderr, "ERROR Frame INTERFRAME_SPACING\n");
+                ESP_LOGW(TAG, "ERROR Frame INTERFRAME_SPACING\n");
                 ret = CAN_ERROR_FRAME;
             }
             else {
@@ -252,7 +254,7 @@ CAN_err_t decoder_decode_msg(CAN_configs_t *p_config_dst, uint8_t sampled_bit) {
     return ret;
 }
 
-void decoder_task(void *ignore) {
+static void decoder_task(void *ignore) {
     uint8_t sample_bit;
     static CAN_configs_t decoded_configs;
     memset(&decoded_configs, 0, sizeof decoded_configs);
@@ -266,6 +268,7 @@ void decoder_task(void *ignore) {
             switch(ret) {
                 case CAN_DECODED: {
                     printf(
+                        "\n"
                         "DECODE:\n"
                         "ID_A: 0x%X\n"
                         "DLC: %d\n"
@@ -288,9 +291,17 @@ void decoder_task(void *ignore) {
                     hardsync_flag = 1;
                 } break;
 
+                case CAN_OK: {
+                    // printf("bit decoded\n");
+                } break;
+
                 default:
                     break;
             }
         }
     }
+}
+
+void decoder_init() {
+    xTaskCreate(decoder_task, "decoderTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
 }

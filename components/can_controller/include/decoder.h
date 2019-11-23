@@ -14,4 +14,5 @@ void decoder_decoded_message_to_configs(CAN_configs_t *p_configs_dst, uint8_t *p
 
 CAN_err_t decoder_decode_msg(CAN_configs_t *p_config_dst, uint8_t sampled_bit);
 
-void decoder_task(void *ignore);
+// void decoder_task(void *ignore);
+void decoder_init();

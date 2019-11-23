@@ -13,6 +13,7 @@ set(COMPONENT_SRCS
     "encoder.c"
     "bittiming.c"
     "can_controller.c"
+    "transmitter.c"
 )
 
 set(COMPONENT_ADD_INCLUDEDIRS "." "include")

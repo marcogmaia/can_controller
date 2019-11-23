@@ -15,6 +15,7 @@
         "stdio.h": "c",
         "encoder.h": "c",
         "transmitter.h": "c",
-        "can_controller.h": "c"
+        "can_controller.h": "c",
+        "string_view": "c"
     },
 }

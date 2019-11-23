@@ -1,9 +1,10 @@
-#include <string.h>
-#include <assert.h>
-#include "encoder.h"
-
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
+#include <assert.h>
+
+#include "encoder.h"
+#include "transmitter.h"
 /*
  * 1. Start
  * 2. Initialize the array for transmitted stream with the special bit pattern 0111 1110
@@ -26,7 +27,7 @@
 uint8_t bit_stuff(uint8_t *dst, uint8_t *begin, uint8_t *end) {
     uint8_t buffer[256];
     memset(buffer, 0xFF, sizeof buffer);
-    uint8_t size    = 0;
+    uint8_t size = 0;
 
     uint8_t lastbit = 0xFF;
     uint8_t counter = 0;
@@ -136,4 +137,10 @@ void encoder_encode_msg(CAN_configs_t *p_config, CAN_message_t *p_encoded_messag
     encoder_message_add_num_to_bits(p_encoded_message, 1, 1);
     /* add EOF */
     encoder_message_add_num_to_bits(p_encoded_message, 0x7F, 7);
+}
+
+void encoder_task(void *pv_message) {
+    uint8_t ret = transmitter_transmit_message(pv_message);
+    gpio_set_level(p_can_pins->tx_pin, 1);
+    if(ret) vTaskDelete(NULL);
 }
