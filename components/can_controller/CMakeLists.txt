@@ -8,12 +8,14 @@ set(COMPONENT_REQUIRES )
 set(COMPONENT_PRIV_REQUIRES )
 
 set(COMPONENT_SRCS 
-    "can_utils.c"
-    "decoder.c"
-    "encoder.c"
-    "bittiming.c"
-    "can_controller.c"
-    "transmitter.c"
+    "src/can_utils.c"
+    "src/decoder.c"
+    "src/encoder.c"
+    "src/bittiming.c"
+    "src/can_controller.c"
+    "src/transmitter.c"
+    "src/receiver.c"
+    # "error_handling.c"
 )
 
 set(COMPONENT_ADD_INCLUDEDIRS "." "include")

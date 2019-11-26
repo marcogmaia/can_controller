@@ -3,6 +3,24 @@
 #include "can_utils.h"
 #include "can_controller.h"
 
+typedef enum enum_decoder_fsm {
+    SOF = 0,
+    ID_A,
+    RTR,
+    IDE,
+    DLC,
+    ID_B,
+    R0,
+    R1,
+    DATA,
+    CRC,
+    /* a partir daqui não há mais stuffing */
+    CRC_DL,
+    ACK,
+    ACK_DL,
+    CAN_EOF,
+    INTERFRAME_SPACING,
+} decoder_fsm_t;
 
 /**
  * @param p_config_dst pointer to struct where the decoded config will be saved

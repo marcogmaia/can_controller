@@ -42,6 +42,7 @@ typedef struct {
 // extern bool is_sample_pt;
 
 extern uint8_t resync_flag;
+extern uint8_t hardsync_flag;
 
 /**
  * run in the setup to configure the bittiming

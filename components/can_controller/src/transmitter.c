@@ -25,9 +25,9 @@ uint8_t transmitter_transmit_message(const CAN_message_t *p_message) {
         transmitter_transmit(p_message->bitarray[i]);
     }
     /* Interframe spacing */
-    transmitter_transmit(1);
-    transmitter_transmit(1);
-    transmitter_transmit(1);
+    transmitter_transmit(CAN_RECESSIVE);
+    transmitter_transmit(CAN_RECESSIVE);
+    transmitter_transmit(CAN_RECESSIVE);
 
     printf("\n");
     return 1;
@@ -53,5 +53,5 @@ static void transmitter_task(void *ignore) {
 }
 
 void transmitter_init() {
-    xTaskCreate(transmitter_task, "trasmTask", configMINIMAL_STACK_SIZE * 3, NULL, 7, NULL);
+    xTaskCreate(transmitter_task, "trnsmtTask", configMINIMAL_STACK_SIZE * 3, NULL, 7, NULL);
 }

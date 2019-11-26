@@ -22,27 +22,8 @@ const char *TAG = "DECODER";
  */
 CAN_err_t decoder_decode_msg(CAN_configs_t *p_config_dst, uint8_t sampled_bit) {
     printf("%d", sampled_bit);
-    fflush(stdout);
-    enum decoder_fsm {
-        SOF = 0,
-        ID_A,
-        RTR,
-        IDE,
-        DLC,
-        ID_B,
-        R0,
-        R1,
-        DATA,
-        CRC,
-        /* a partir daqui não há mais stuffing */
-        CRC_DL,
-        ACK,
-        ACK_DL,
-        CAN_EOF,
-        INTERFRAME_SPACING,
-    };
 
-    static enum decoder_fsm state = SOF;
+    static decoder_fsm_t state = SOF;
 
     static uint8_t buffer[256];
     static uint8_t size;
@@ -82,7 +63,6 @@ CAN_err_t decoder_decode_msg(CAN_configs_t *p_config_dst, uint8_t sampled_bit) {
         case SOF: {
             /* se SoF faz o setup */
             if(sampled_bit == 0) {
-                // hardsync_flag = 1;
                 memset(buffer, 0xFF, sizeof buffer);
                 memset(p_config_dst, 0, sizeof *p_config_dst);
                 static uint8_t data[8];
@@ -246,66 +226,13 @@ CAN_err_t decoder_decode_msg(CAN_configs_t *p_config_dst, uint8_t sampled_bit) {
                 ++state_cnt;
             }
             if(state_cnt == 3) {
-                ret           = CAN_IDLE;
                 hardsync_flag = 1;
                 state_cnt     = 0;
                 state         = SOF; /* vai ficar aqui até acontecer o SoF */
+                ret           = CAN_IDLE;
             }
         } break;
     }
 
     return ret;
-}
-
-static void decoder_task(void *ignore) {
-    uint8_t sample_bit;
-    static CAN_configs_t decoded_configs;
-    memset(&decoded_configs, 0, sizeof decoded_configs);
-
-    while(true) {
-        if(xSemaphoreTake(sem_sample_pt, portMAX_DELAY)) {
-            sample_bit    = gpio_get_level(p_can_pins->rx_pin);
-            CAN_err_t ret = decoder_decode_msg(&decoded_configs, sample_bit);
-
-            /* tratar os erros no switch */
-            switch(ret) {
-                case CAN_DECODED: {
-                    printf(
-                        "\n"
-                        "DECODE:\n"
-                        "ID_A: 0x%X\n"
-                        "DLC: %d\n"
-                        "RTR: %d\n"
-                        "IDE: %d\n"
-                        "ID_B: 0x%X\n"
-                        "DATA: %d\n"
-                        "CRC: %d\n",
-                        decoded_configs.StdId, decoded_configs.DLC, decoded_configs.RTR, decoded_configs.IDE,
-                        decoded_configs.ExtId, decoded_configs.data[0], decoded_configs.CRC);
-
-                    /* reset configs  */
-                    memset(&decoded_configs, 0, sizeof decoded_configs);
-                } break;
-
-                case CAN_ACK: {
-                    /* envia pro transmitter o ACK pra botar no barramento */
-                } break;
-
-                case CAN_IDLE: {
-                    hardsync_flag = 1;
-                } break;
-
-                case CAN_OK: {
-                    // printf("bit decoded\n");
-                } break;
-
-                default:
-                    break;
-            }
-        }
-    }
-}
-
-void decoder_init() {
-    xTaskCreate(decoder_task, "decoderTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
 }

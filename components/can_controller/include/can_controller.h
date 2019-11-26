@@ -7,6 +7,9 @@
 #include "freertos/task.h"
 #include "driver/gpio.h"
 
+#define CAN_DOMINANT 0
+#define CAN_RECESSIVE 1
+
 #define CAN_CONFIGS_DEFAULT                                                                                          \
     {                                                                                                                \
         .StdId = 0x7FF, .ExtId = 0x1FFFFFFF, .SRR = 1, .IDE = 0, .RTR = 1, .r0 = 1, .r1 = 1, .DLC = 0, .data = NULL, \

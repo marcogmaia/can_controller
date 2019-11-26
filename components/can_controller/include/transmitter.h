@@ -1,4 +1,4 @@
-
+#pragma once
 #include "can_controller.h"
 
 void transmitter_transmit(uint8_t transmit_bit);

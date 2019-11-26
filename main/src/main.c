@@ -7,11 +7,12 @@
 #include "decoder.h"
 #include "encoder.h"
 #include "transmitter.h"
+#include "receiver.h"
 
 void app_main(void) {
     static const bittiming_configs_t timing_configs = {
-        .time_tq   = 10000,  // 10ms
-        .size_seg1 = 14,     // sync_seg == 1, 75% sample point
+        .time_tq   = 5000,  // 5ms
+        .size_seg1 = 14,    // sync_seg == 1, 75% sample point
         .size_seg2 = 5,
         .SJW       = 3,
     };
@@ -23,5 +24,5 @@ void app_main(void) {
 
     bittiming_setup(&timing_configs, &can_pins);
     transmitter_init();
-    decoder_init();
+    receiver_init();
 }
