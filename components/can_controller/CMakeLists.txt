@@ -15,7 +15,6 @@ set(COMPONENT_SRCS
     "src/can_controller.c"
     "src/transmitter.c"
     "src/receiver.c"
-    # "error_handling.c"
 )
 
 set(COMPONENT_ADD_INCLUDEDIRS "." "include")

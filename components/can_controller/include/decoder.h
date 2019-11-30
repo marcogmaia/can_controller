@@ -14,13 +14,15 @@ typedef enum enum_decoder_fsm {
     R1,
     DATA,
     CRC,
-    /* a partir daqui não há mais stuffing */
+    /* a partir daqui não há mais stuffing \/ */
     CRC_DL,
     ACK,
     ACK_DL,
     CAN_EOF,
     INTERFRAME_SPACING,
+    ERROR_STATE
 } decoder_fsm_t;
+extern decoder_fsm_t decoder_state;
 
 /**
  * @param p_config_dst pointer to struct where the decoded config will be saved
@@ -30,7 +32,7 @@ void decoder_decoded_message_to_configs(CAN_configs_t *p_configs_dst, uint8_t *p
 // void decoder_bit_destuff(uint8_t sample_bit, CAN_message_t *destuffed_bitarr);
 // uint8_t *decoder_decode_msg(CAN_message_t *p_encoded_message);
 
-CAN_err_t decoder_decode_msg(CAN_configs_t *p_config_dst, uint8_t sampled_bit);
+CAN_err_t decoder_decode_msg(/* CAN_configs_t *p_config_dst,  */ uint8_t sampled_bit);
 
 // void decoder_task(void *ignore);
 void decoder_init();

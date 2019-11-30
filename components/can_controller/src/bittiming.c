@@ -35,10 +35,9 @@ bool is_write_pt, is_sample_pt;
 /* ==== END VARIABLE DEFINITIONS ========= */
 static const bittiming_configs_t *configs;
 
-static void plot_data() {
+void plot_data() {
     printf("%d %d %d\n", state, is_write_pt - 1, is_sample_pt - 1);
 }
-
 
 static void IRAM_ATTR intr_set_resync_flag(void *ignore) {
     resync_flag = 1;

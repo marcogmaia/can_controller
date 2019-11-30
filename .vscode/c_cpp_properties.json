@@ -31,7 +31,8 @@
             "cppStandard": "c++17",
             "compilerPath": "${env:HOME}/esp/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc",
             "defines": [],
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+            "configurationProvider": "vector-of-bool.cmake-tools"
         }
     ],
     "version": 4

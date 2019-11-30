@@ -140,7 +140,7 @@ void encoder_encode_msg(CAN_configs_t *p_config, CAN_message_t *p_encoded_messag
 }
 
 void encoder_task(void *pv_message) {
-    uint8_t ret = transmitter_transmit_message(pv_message);
+    uint8_t ret = transmitter_send_message(pv_message);
     gpio_set_level(p_can_pins->tx_pin, 1);
     if(ret) vTaskDelete(NULL);
 }

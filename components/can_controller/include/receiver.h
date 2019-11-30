@@ -10,3 +10,4 @@
 
 
 void receiver_init();
+uint8_t receiver_receive_bit();

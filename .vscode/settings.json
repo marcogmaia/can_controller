@@ -17,7 +17,8 @@
         "transmitter.h": "c",
         "can_controller.h": "c",
         "string_view": "c",
-        "task.h": "c"
+        "task.h": "c",
+        "receiver.h": "c"
     },
     "cmake.configureOnOpen": false,
 }

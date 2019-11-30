@@ -69,4 +69,4 @@ void update_state_machine();
 void hard_sync();
 
 /* @brief plot(print): state, write_pt and sample_pt */
-// void plot_data();
+void plot_data();

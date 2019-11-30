@@ -64,3 +64,5 @@ extern SemaphoreHandle_t sem_sample_pt;
 extern const CAN_pins_t *p_can_pins;
 
 extern uint8_t hardsync_flag;
+
+extern bool can_arb_lost;
