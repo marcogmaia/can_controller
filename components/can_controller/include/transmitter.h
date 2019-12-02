@@ -8,3 +8,5 @@ void transmitter_send_interframe_space() ;
 uint8_t transmitter_send_message(const CAN_message_t *p_message);
 void transmitter_init();
 
+extern bool transmitter_sending;
+extern bool transmitter_can_send;

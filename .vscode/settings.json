@@ -18,7 +18,9 @@
         "can_controller.h": "c",
         "string_view": "c",
         "task.h": "c",
-        "receiver.h": "c"
+        "receiver.h": "c",
+        "array": "c",
+        "string": "c"
     },
     "cmake.configureOnOpen": false,
 }

@@ -6,9 +6,10 @@
 #include "bittiming.h"
 #include "can_controller.h"
 #include "transmitter.h"
+#include "receiver.h"
 
 #include "esp_log.h"
-const char *TAG = "DECODER";
+static const char *TAG = "DECODER";
 
 
 // bool decoder_message_decoded() {
@@ -28,28 +29,26 @@ const char *TAG = "DECODER";
  */
 
 CAN_configs_t configs_dst;
+static uint8_t received_flag = 0;
 void decoder_get_msg(CAN_configs_t *p_configs_dst) {
+    // static uint8_t data[8];
     memcpy(p_configs_dst, &configs_dst, sizeof configs_dst);
+    memcpy(p_configs_dst->data, configs_dst.data, configs_dst.DLC);
+    // p_configs_dst->data = data;
 }
 
 decoder_fsm_t decoder_state = SOF;
 CAN_err_t decoder_decode_msg(/* CAN_configs_t *p_config_dst, */ uint8_t sampled_bit) {
-    printf("%d", sampled_bit);
+    ESP_LOGD(TAG, "%d, state: %d", sampled_bit, decoder_state);
 
 
     static uint8_t buffer[256];
     static uint8_t size;
 
 
-    static uint8_t error_count = 0;
-    static uint8_t state_cnt   = 0;
-    CAN_err_t ret              = CAN_OK;
+    static uint8_t state_cnt = 0;
+    CAN_err_t ret            = CAN_OK;
 
-    /* ErrorFrame detection */
-    error_count = sampled_bit ? 0 : error_count + 1;
-    if(error_count >= 6) {
-        decoder_state = ERROR_STATE;
-    }
 
     /* "estado" que trata do destuff */
     {
@@ -67,7 +66,8 @@ CAN_err_t decoder_decode_msg(/* CAN_configs_t *p_config_dst, */ uint8_t sampled_
                 /* se é o bitstuffed e não mudou o bit, então ocorreu o erro */
                 curr_bit_count = 1;
                 is_stuffed_bit = false;
-                decoder_state  = ERROR_STATE;
+                // decoder_state  = ERROR_STATE;
+                return CAN_ERROR_STUFFING;
             }
         }
         else {
@@ -88,9 +88,10 @@ CAN_err_t decoder_decode_msg(/* CAN_configs_t *p_config_dst, */ uint8_t sampled_
             if(sampled_bit == 0) {
                 memset(buffer, 0xFF, sizeof buffer);
                 memset(&configs_dst, 0, sizeof configs_dst);
-                static uint8_t data[8];
-                memset(data, 0, sizeof data);
-                configs_dst.data = data;
+                // static uint8_t data[8];
+                // memset(data, 0, sizeof data);
+                // configs_dst.data = data;
+                memset(configs_dst.data, 0, sizeof configs_dst.data);
 
                 size           = 0;
                 buffer[size++] = sampled_bit;
@@ -211,7 +212,8 @@ CAN_err_t decoder_decode_msg(/* CAN_configs_t *p_config_dst, */ uint8_t sampled_
             if(configs_dst.CRC != crc15(buffer, size - 15 - 2)) {
                 // ESP_LOGW(TAG, "ERROR CRC");
                 decoder_state = ERROR_STATE;
-                ret           = CAN_ERROR_CRC;
+                ESP_LOGW(TAG, "ERROR CRC");
+                ret = CAN_ERROR_CRC;
                 break;
             }
             buffer[size++] = sampled_bit;
@@ -219,18 +221,24 @@ CAN_err_t decoder_decode_msg(/* CAN_configs_t *p_config_dst, */ uint8_t sampled_
         } break;
 
         case ERROR_STATE: {
-            static uint8_t err_state_count = 0;
-            if(err_state_count < 6) {
+            // static uint8_t err_state_count = 0;
+            receiver_error_count = 0;
+            received_flag = 0;
+            xSemaphoreTake(sem_receive_msg, 0);
+            if(state_cnt < 6) {
                 transmitter_transmit_bit(CAN_DOMINANT);
-                ++err_state_count;
+                ++state_cnt;
             }
-            else if(err_state_count < 14) {
+            else if(state_cnt < (14 + 3)) {
                 transmitter_transmit_bit(CAN_RECESSIVE);
-                ++err_state_count;
+                ++state_cnt;
             }
             else {
-                err_state_count = 0;
-                decoder_state   = INTERFRAME_SPACING;
+                state_cnt     = 0;
+                hardsync_flag = 1;
+                can_arb_lost  = false;
+                ret           = CAN_IDLE;
+                decoder_state = SOF; /* vai ficar aqui  até acontecer o SoF */
             }
         } break;
 
@@ -246,24 +254,31 @@ CAN_err_t decoder_decode_msg(/* CAN_configs_t *p_config_dst, */ uint8_t sampled_
             }
 
             if(state_cnt == 7) {
-                // state_cnt = 0;
                 state_cnt     = 0;
                 decoder_state = INTERFRAME_SPACING;  // decoder_state = INTERFRAME_SPACING
                 ret           = CAN_DECODED;
+                
             }
         } break;
 
         case INTERFRAME_SPACING: {
             if(sampled_bit == 0) {
-                ESP_LOGW(TAG, "ERROR Frame INTERFRAME_SPACING\n");
+                ESP_LOGW(TAG, "ERROR Frame INTERFRAME_SPACING");
                 ret = CAN_ERROR_FRAME;
             }
             else {
                 buffer[size++] = sampled_bit;
                 ++state_cnt;
             }
-            if(state_cnt == 3) {
+            if(state_cnt == 2) {
                 hardsync_flag = 1;
+
+                received_flag = 1;
+                if(received_flag ) {
+                    received_flag = 0;
+                    xSemaphoreGive(sem_receive_msg);
+                }
+
                 state_cnt     = 0;
                 decoder_state = SOF; /* vai ficar aqui até acontecer o SoF */
                 can_arb_lost  = false;

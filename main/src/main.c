@@ -23,6 +23,12 @@ void app_main(void) {
     };
 
     bittiming_setup(&timing_configs, &can_pins);
-    transmitter_init();
     receiver_init();
+
+    // while(true) {
+    //     if(decoder_state == SOF) {
+            transmitter_init();
+        // }
+        // vTaskDelay(pdMS_TO_TICKS(1000));
+    // }
 }

@@ -6,6 +6,7 @@
 #include "esp_log.h"
 #include "driver/gpio.h"
 #include "bittiming.h"
+#include "transmitter.h"
 
 
 typedef enum {
@@ -40,7 +41,9 @@ void plot_data() {
 }
 
 static void IRAM_ATTR intr_set_resync_flag(void *ignore) {
-    resync_flag = 1;
+    if(can_arb_lost) {
+        resync_flag = 1;
+    }
 }
 
 static esp_timer_handle_t handle_bittiming_fsm;
@@ -74,8 +77,8 @@ void bittiming_setup(const bittiming_configs_t *timing_configs, const CAN_pins_t
     gpio_config_t io_conf;
     io_conf.pin_bit_mask = (1ULL << p_can_pins->rx_pin);  // GPIO18 e 19
     io_conf.mode         = GPIO_MODE_INPUT;
-    io_conf.pull_down_en = GPIO_PULLDOWN_ENABLE;
-    io_conf.pull_up_en   = GPIO_PULLUP_DISABLE;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en   = GPIO_PULLUP_ENABLE;
     io_conf.intr_type    = GPIO_PIN_INTR_POSEDGE;
 
     gpio_config(&io_conf);

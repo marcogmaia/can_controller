@@ -30,15 +30,15 @@ typedef struct CAN_configs {
                          This parameter must be a number between Min_Data = 0 and
                        Max_Data = 0x3FFFF. */
     uint8_t SRR;
-    uint8_t IDE;    /* Specifies the type of frame for the message that will be
-                        transmitted. */
-    uint8_t RTR;    /* Specifies the type of frame for the message that will be
-                        transmitted.*/
-    uint8_t r0, r1; /* Reserved bits */
-    uint8_t DLC;    /* Specifies the length of the frame that will be
-                        transmitted. This parameter must be a number between Min_Data
-                        = 0 and Max_Data = 8. */
-    uint8_t *data;  /* Pointer to data to be transmitted */
+    uint8_t IDE;     /* Specifies the type of frame for the message that will be
+                         transmitted. */
+    uint8_t RTR;     /* Specifies the type of frame for the message that will be
+                         transmitted.*/
+    uint8_t r0, r1;  /* Reserved bits */
+    uint8_t DLC;     /* Specifies the length of the frame that will be
+                         transmitted. This parameter must be a number between Min_Data
+                         = 0 and Max_Data = 8. */
+    uint8_t data[8]; /* Pointer to data to be transmitted */
     uint32_t CRC;
 } CAN_configs_t;
 

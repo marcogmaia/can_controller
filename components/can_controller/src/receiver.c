@@ -1,71 +1,66 @@
+#include "esp_log.h"
 #include "receiver.h"
 #include "transmitter.h"
 
 
-static void receiver_task(void *ignore) {
-    // static CAN_configs_t decoded_configs;
-    // memset(&decoded_configs, 0, sizeof decoded_configs);
-
-    // while(true) {
-    //     // if(xSemaphoreTake(sem_sample_pt, portMAX_DELAY)) {
-    //     static uint8_t sampled_bit;
-    //     sampled_bit   = gpio_get_level(p_can_pins->rx_pin);
-    //     CAN_err_t ret = decoder_decode_msg(sampled_bit);
-
-    //     /* tratar os erros no switch */
-    //     switch(ret) {
-    //         case CAN_DECODED: {
-    //             printf(
-    //                 "\n"
-    //                 "DECODE:\n"
-    //                 "ID_A: 0x%X\n"
-    //                 "DLC: %d\n"
-    //                 "RTR: %d\n"
-    //                 "IDE: %d\n"
-    //                 "ID_B: 0x%X\n"
-    //                 "DATA: %d\n"
-    //                 "CRC: %d\n",
-    //                 decoded_configs.StdId, decoded_configs.DLC, decoded_configs.RTR, decoded_configs.IDE,
-    //                 decoded_configs.ExtId, decoded_configs.data[0], decoded_configs.CRC);
-
-    //             /* reset configs  */
-    //             memset(&decoded_configs, 0, sizeof decoded_configs);
-    //         } break;
-
-    //         case CAN_ACK: {
-    //             /* envia pro transmitter o ACK pra botar no barramento */
-    //             transmitter_transmit_bit(CAN_DOMINANT);
-    //         } break;
-
-    //         case CAN_IDLE: {
-    //         } break;
-
-    //         case CAN_OK: {
-    //             // printf("bit decoded\n");
-    //         } break;
-
-    //         default:
-    //             break;
-    //     }
-    //     // }
-    // }
-}
-
+uint8_t receiver_error_count = 0;
 uint8_t receiver_receive_bit() {
     static uint8_t sampled_bit;
+    /* ErrorFrame detection */
+
     if(xSemaphoreTake(sem_sample_pt, portMAX_DELAY)) {
         sampled_bit = gpio_get_level(p_can_pins->rx_pin);
+
+        receiver_error_count = sampled_bit ? 0 : receiver_error_count + 1;
+        if(receiver_error_count >= 6) {
+            decoder_state = ERROR_STATE;
+            ESP_LOGW("RECEIVER", "ERROR_COUNT");
+        }
+
         decoder_decode_msg(sampled_bit);
+        // printf();
     }
     return sampled_bit;
 }
 
-CAN_configs_t receiver_receive_message() {
-    static CAN_configs_t received_configs;
+SemaphoreHandle_t sem_receive_msg = NULL;
+void receiver_receive_message(CAN_configs_t *p_configs) {
+    CAN_configs_t received_configs;
 
-    return received_configs;
+    if(xSemaphoreTake(sem_receive_msg, portMAX_DELAY)) {
+        decoder_get_msg(&received_configs);
+    }
+
+    memcpy(p_configs, &received_configs, sizeof received_configs);
+}
+
+static void receiver_task(void *ignore) {
+    while(true) {
+        receiver_receive_bit();
+
+        static CAN_configs_t msg_configs;
+
+        if(xSemaphoreTake(sem_receive_msg, pdMS_TO_TICKS(20))) {
+            decoder_get_msg(&msg_configs);
+
+            if(transmitter_sending == false) {
+                ESP_LOGI("RECEIVER",
+                         "DECODE:\n"
+                         "ID_A: 0x%X\n"
+                         "DLC: %d\n"
+                         "RTR: %d\n"
+                         "IDE: %d\n"
+                         "ID_B: 0x%X\n"
+                         "DATA: %d\n"
+                         "CRC: %d",
+                         msg_configs.StdId, msg_configs.DLC, msg_configs.RTR, msg_configs.IDE, msg_configs.ExtId,
+                         msg_configs.data[0], msg_configs.CRC);
+            }
+        }
+    }
 }
 
 void receiver_init() {
+    sem_receive_msg = xSemaphoreCreateBinary();
     xTaskCreate(receiver_task, "rcvTask", configMINIMAL_STACK_SIZE * 3, NULL, 5, NULL);
 }
